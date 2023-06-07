@@ -1,0 +1,16 @@
+thinh abc 0
+thinh1 aaa 1
+thinh2 bbb 0
+thinh3 ccc 1
+thinh4 ddd 0
+thinh5 eee 1
+thinh6 ggg 1
+thinh7 222 0
+thinh8 iii 1
+thinh9 sdfs 0
+thinh10 333333 1
+thinh11 222 1
+thinh12 222 1
+thinh13 222 0
+thinh14 222 1
+thinh15 222 1

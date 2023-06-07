@@ -1,0 +1,248 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Define the maximum length of username and password
+#define MAX_USERNAME_LENGTH 50
+#define MAX_PASSWORD_LENGTH 50
+
+// Define a structure to store account information
+typedef struct Account {
+    char username[MAX_USERNAME_LENGTH];
+    char password[MAX_PASSWORD_LENGTH];
+    int status;
+    int num_signin_wrong;//know the number of times user entered the wrong password
+    int is_logged_in;//=0 not logged_in
+    struct Account* next;
+}Account;
+// Define a linked list to store all accounts
+Account *head=NULL;
+Account *tail=NULL;
+//global variable
+int num_logged_account=0;//Need to login to use function 3 and 4
+// Function prototypes
+void load_accounts();// Load account information from the file into the linked list
+void save_accounts();// Save account information from the linked list to the file
+void print_menu();// Print the main menu
+void register_account();
+void sign_in();
+void search_account();
+void sign_out();
+Account *find_account();//find account in the list
+void freeList(Account* head); //free list
+int main() {
+    load_accounts();
+
+    int choice = 0;
+    do {
+        print_menu();
+        scanf("%d", &choice);
+        switch (choice) {
+            case 1:
+                register_account();
+                break;
+            case 2:
+                sign_in();
+                break;
+            case 3:
+            	if(num_logged_account>0){
+            		search_account();
+            	}else{
+            		printf("You are not sign in.\n");
+				}
+                break;
+            case 4:
+            	if(num_logged_account>0){
+            		 sign_out();
+            	}else{
+            		printf("You are not sign in.\n");
+				}
+                break;
+            default:
+                printf("Goodbye!\n");
+                freeList(head);
+                break;
+        }
+    } while (choice >= 1 && choice <= 4);
+
+    save_accounts();
+
+    return 0;
+}
+void freeList(Account* head) {
+    Account* current = head;
+    Account* temp;
+
+    while (current != NULL) {
+        temp = current;
+        current = current->next;
+        free(temp);
+    }
+
+    free(head);
+}
+Account* find_account(char username[MAX_USERNAME_LENGTH]){
+	Account* acc = head;
+	while (acc != NULL) {
+        if(strcmp(acc->username,username) == 0){
+			return acc;
+		}
+			acc = acc->next;
+			
+    }
+    	printf("Cannot find Account.\n");
+    	return NULL;
+}
+// Load account information from the file into the linked list
+void load_accounts() {
+    FILE* fp = fopen("account.txt", "r");
+    if (fp == NULL) {
+        printf("Error: cannot open account file.\n");
+        return;
+    }
+
+    char username[MAX_USERNAME_LENGTH];
+    char password[MAX_PASSWORD_LENGTH];
+    int status;
+    while (fscanf(fp, "%s %s %d", username, password, &status) == 3) {
+        Account* account = malloc(sizeof(Account));
+        strcpy(account->username, username);
+        strcpy(account->password, password);
+        account->status = status;
+        account->num_signin_wrong=0;
+        account->is_logged_in=0;
+        account->next = NULL;
+            if (head == NULL) {
+                head = account;
+            } else {
+                tail->next = account;
+            }
+            tail = account;
+            
+        //printf("%s %s %d\n",account->username,account->password,account->status);
+    }
+
+    fclose(fp);
+}
+
+// Save account information from the linked list to the file
+void save_accounts() {
+    FILE* fp = fopen("account.txt", "w");
+    if (fp == NULL) {
+        printf("Error: cannot open account file.\n");
+        return;
+    }
+
+    Account* current = head;
+    while (current != NULL) {
+        fprintf(fp, "%s %s %d\n", current->username, current->password, current->status);
+        current = current->next;
+    }
+
+    fclose(fp);
+}
+
+// Print the main menu
+void print_menu() {
+    printf("\nUSER MANAGEMENT PROGRAM\n");
+    printf("-----------------------------------\n");
+    printf("1. Register\n");
+    printf("2. Sign in\n");
+    printf("3. Search\n");
+    printf("4. Sign out\n");
+    printf("Your choice (1-4, other to quit): ");
+}
+void register_account(){
+	char username[MAX_USERNAME_LENGTH];
+    char password[MAX_PASSWORD_LENGTH];
+	printf("Username: ");
+	scanf("%s",&username);
+	Account* account = head;
+	while (account != NULL) {
+        if(strcmp(account->username,username) == 0){
+        	printf("Account existed.\n");
+        	break;
+		}
+			account = account->next;
+    }
+	if(account==NULL){
+		printf("password: ",&password);
+		scanf("%s",&password);
+		printf("\nSuccessful registration.\n");
+	 	Account* account = malloc(sizeof(Account));
+        strcpy(account->username, username);
+        strcpy(account->password, password);
+        account->status = 1;
+        account->num_signin_wrong=0;
+        account->is_logged_in=0;
+    	account->next = NULL;
+        if (head == NULL) {
+                head = account;
+            } else {
+                tail->next = account;
+            }
+            tail = account;
+	save_accounts();
+	}
+}
+void sign_in(){
+	char username[MAX_USERNAME_LENGTH];
+    char password[MAX_PASSWORD_LENGTH];
+    int status;
+	printf("Username: ");
+	scanf("%s",&username);
+	
+	Account* current = find_account(username);
+    if(current != NULL) {
+    	//check blocked
+		if(current->status==0){
+			printf("Account is blocked.\n");
+		}else if(current->status==1){
+			printf("password: ",&password);
+			scanf("%s",&password);	
+			if(strcmp(current->password,password) == 0){
+				printf("Hello %s\n",current->username);
+				current->num_signin_wrong=0;
+				current->is_logged_in=1;
+				num_logged_account++;
+			}else{
+				current->num_signin_wrong=current->num_signin_wrong+1;
+				printf("Password is incorrect.\n");
+				if(current->num_signin_wrong>=3){
+					printf("Account is Blocked.\n");
+					current->status=0;
+					save_accounts();
+				}
+			}
+		}
+	}	
+}
+void search_account(){
+	char username[MAX_USERNAME_LENGTH];
+    int status;
+	printf("Username: ");
+	scanf("%s",&username);
+	Account* current = find_account(username);
+	if(current != NULL) {
+        	if(current->status==0){
+        		printf("\nAccount is Blocked.");
+			}else{
+				printf("\nAccount is Active.");
+			}
+		}
+}
+void sign_out(){
+	char username[MAX_USERNAME_LENGTH];
+	printf("Username: ");
+	scanf("%s",&username);
+	Account* current = find_account(username);
+	if(current != NULL) {
+        if(current->is_logged_in==1){
+        		num_logged_account--;
+        		current->is_logged_in=0;
+				printf("\nGoodbye %s.\n",current->username);
+		}else{
+			printf("\nAccount is not sign in.\n");
+		}
+    }
+}
